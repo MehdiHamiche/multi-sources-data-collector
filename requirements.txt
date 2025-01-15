@@ -1,4 +1,8 @@
 fastapi
 requests
 duckdb
-pytest
+python-dotenv
+graphql-core
+apscheduler
+graphene
+ariadne
