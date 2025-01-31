@@ -6,3 +6,4 @@ graphql-core
 apscheduler
 graphene
 ariadne
+colorama
