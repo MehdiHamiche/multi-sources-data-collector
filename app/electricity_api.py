@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 # Charger les variables d'environnement
 load_dotenv()
 API_KEY = os.getenv("ELECTRICITYMAP_API_KEY")
+# Afficher la clé API utilisée
+print(f"Clé API utilisée : {API_KEY}")
 
 # Liste des zones valides en France selon l'API Electricity Map
 ZONES_FRANCE = {
@@ -31,6 +33,25 @@ def get_carbon_intensity(zone_code):
         print(f"❌ Erreur {response.status_code} - {response.text}")
         return None
 
+def get_power_consumption(zone_code):
+    url = f"https://api.electricitymap.org/v3/power-breakdown/latest?zone={zone_code}"
+    headers = {"auth-token": API_KEY}
+
+    response = requests.get(url, headers=headers)
+
+    if response.status_code == 200:
+        data = response.json()
+        return {
+            "zone": zone_code,
+            "power_Consumption_Breakdown": data["powerConsumptionBreakdown"],
+            "power_Production_Breakdown": data["powerProductionBreakdown"],
+            "datetime": data["datetime"]
+        }
+    else:
+        print(f"❌ Erreur {response.status_code} - {response.text}")
+        return None
+
+
 # Fonction pour récupérer et stocker les données des zones françaises
 def fetch_all_zones():
     try:
@@ -46,17 +67,48 @@ def fetch_all_zones():
         """)
 
         for zone_name, zone_code in ZONES_FRANCE.items():
-            data = get_carbon_intensity(zone_code)
-            if data:
-                print(f"📊 Zone : {zone_name} - Intensité carbone : {data['carbon_intensity']} gCO₂/kWh - Date : {data['datetime']}")
+            carbon_data = get_carbon_intensity(zone_code)
+            if carbon_data:
+                print(f"📊 Zone : {zone_name} - Intensité carbone : {carbon_data['carbon_intensity']} gCO₂/kWh - Date : {carbon_data['datetime']}")
                 conn.execute("INSERT INTO carbon_zones VALUES (?, ?, ?)", 
-                             (zone_name, data["carbon_intensity"], data["datetime"]))
+                             (zone_name, carbon_data["carbon_intensity"], carbon_data["datetime"]))
 
     except duckdb.IOException as e:
         print(f"❌ Erreur DuckDB : {e}")
 
     finally:
         conn.close()  # 🔴 Fermeture propre de la connexion
+
+# Fonction pour récupérer et stocker les données de consommation et production des zones françaises
+def fetch_consumption_zones():
+    try:
+        conn = duckdb.connect("data.db", read_only=False)
+
+        # 🔴 Assurer que la table `consumption_zones` est bien créée
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS consumption_zones (
+                zone TEXT,
+                power_Consumption_Breakdown JSON,
+                power_Production_Breakdown JSON,
+                datetime TIMESTAMP
+            )
+        """)
+
+        for zone_name, zone_code in ZONES_FRANCE.items():
+            consumption_data = get_power_consumption(zone_code)
+            if consumption_data:
+                print(f"📊 Zone : {zone_name} - Demande : {consumption_data['power_Consumption_Breakdown']} MW - Production : {consumption_data['power_Production_Breakdown']} MW - Date : {consumption_data['datetime']}")
+                conn.execute("INSERT INTO consumption_zones VALUES (?, ?, ?, ?)", 
+                             (zone_name, consumption_data['power_Consumption_Breakdown'],consumption_data['power_Production_Breakdown'], consumption_data["datetime"]))
+
+    except duckdb.IOException as e:
+        print(f"❌ Erreur DuckDB : {e}")
+
+    finally:
+        conn.close()  # 🔴 Fermeture propre de la connexion
+
+
+
 
 
 # Fonction pour récupérer toutes les zones disponibles
