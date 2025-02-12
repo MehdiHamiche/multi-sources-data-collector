@@ -1,46 +1,40 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, Dimensions } from "react-native";
+import { LineChart } from "react-native-chart-kit";
 
 const CarbonIntensityChart = ({ data }) => {
-  if (!data || !Array.isArray(data)) {
-    return <Text style={styles.message}>Aucune donnée disponible</Text>;
+  if (!data || data.length === 0) {
+    return <Text>Aucune donnée disponible</Text>;
   }
 
+  const labels = data.map(item => item.date_time);
+  const values = data.map(item => item.carbon_intensity);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Graphique de l'intensité carbone</Text>
-      <FlatList
-        data={data}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <Text style={styles.item}>
-            {item.time}: {item.intensity}
-          </Text>
-        )}
+    <View>
+      <Text style={{ textAlign: "center", fontSize: 16, marginBottom: 10 }}>
+        Intensité carbone sur le temps
+      </Text>
+      <LineChart
+        data={{
+          labels: labels,
+          datasets: [{ data: values }]
+        }}
+        width={Dimensions.get("window").width - 20}
+        height={220}
+        yAxisSuffix=" gCO₂/kWh"
+        chartConfig={{
+          backgroundColor: "#e26a00",
+          backgroundGradientFrom: "#ff9800",
+          backgroundGradientTo: "#ffcc80",
+          decimalPlaces: 2,
+          color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+        }}
+        bezier
       />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  item: {
-    fontSize: 16,
-    padding: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  message: {
-    textAlign: 'center',
-    marginTop: 20,
-  },
-});
 
 export default CarbonIntensityChart;

@@ -1,38 +1,36 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
+import React from "react";
+import MapView, { Marker } from "react-native-maps";
+import { View, StyleSheet } from "react-native";
 
-const Map = ({ data }) => {
-  if (!data || !Array.isArray(data)) {
-    return <Text style={styles.message}>Aucune donnée disponible</Text>;
-  }
-
+const Map = ({ latitude, longitude }) => {
   return (
     <View style={styles.container}>
-      <FlatList
-        data={data}
-        keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item }) => (
-          <Text style={styles.item}>{item.name || 'Lieu inconnu'}</Text>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: latitude || 48.8566, // Coordonnées par défaut (Paris)
+          longitude: longitude || 2.3522,
+          latitudeDelta: 0.1,
+          longitudeDelta: 0.1,
+        }}
+      >
+        {latitude && longitude && (
+          <Marker coordinate={{ latitude, longitude }} title="Emplacement" />
         )}
-      />
+      </MapView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    backgroundColor: '#ddd',
+    flex: 1,
+    width: "100%",
+    height: "100%",
   },
-  item: {
-    fontSize: 16,
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  message: {
-    textAlign: 'center',
-    marginTop: 20,
+  map: {
+    width: "100%",
+    height: "100%",
   },
 });
 
