@@ -12,18 +12,13 @@ ZONES_FRANCE = {
     "Corse": "FR-COR"
 }
 
-import duckdb
-import os
-import pandas as pd
-
-
 def export_to_csv():
     tables = ["consumption_zones", "aggregated_data", "weather_infos"]
 
-
-    if not os.path.exists("exports"):
-        os.makedirs("exports")
-
+    # Création du dossier "app/data_csv" s'il n'existe pas
+    output_dir = os.path.join("app", "data_csv")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     conn = duckdb.connect("data.db")
 
@@ -32,8 +27,8 @@ def export_to_csv():
             # Lire les données de la table dans un DataFrame
             df = conn.execute(f"SELECT * FROM {table}").fetchdf()
 
-            # Exporter au format CSV
-            output_path = os.path.join("exports", f"{table}.csv")
+            # Exporter au format CSV dans "app/data_csv"
+            output_path = os.path.join(output_dir, f"{table}.csv")
             df.to_csv(output_path, index=False)
 
             print(f"✅ Exporté : {output_path}")

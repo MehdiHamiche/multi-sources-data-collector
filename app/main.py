@@ -33,7 +33,10 @@ def read_weather_data():
                 "temperature": float(row["temperature"]),
                 "dateTime": row["dateTime"],
                 "description": row["description"],
-                "cloud": int(row["cloud"])
+                "cloud": int(row["cloud"]),
+                "wind": float(row["wind"]),
+                "humidity": int(row["humidity"]),
+                "pressure": int(row["pressure"])
             })
     return data
 
