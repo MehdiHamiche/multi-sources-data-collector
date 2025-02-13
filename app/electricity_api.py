@@ -1,3 +1,4 @@
+import csv
 import requests
 import os
 import duckdb
@@ -33,7 +34,52 @@ def get_carbon_intensity(zone_code):
         print(f"❌ Erreur {response.status_code} - {response.text}")
         return None
 
-def get_power_consumption(zone_code):
+# Fonction pour récupérer et sauvegarder les données dans un CSV
+def get_power_consumption_and_save(zone_code, output_file="power_consumption_and_carbon_data.csv"):
+    # Récupérer les données de consommation de l'API Electricity Map
+    url = f"https://api.electricitymap.org/v3/power-breakdown/latest?zone={zone_code}"
+    headers = {"auth-token": API_KEY}
+    
+    response = requests.get(url, headers=headers)
+    
+    if response.status_code == 200:
+        data = response.json()
+        
+        # Extraire les données nécessaires
+        zone = zone_code
+        power_consumption_breakdown = data.get("powerConsumptionBreakdown", {})
+        power_production_breakdown = data.get("powerProductionBreakdown", {})
+        datetime = data.get("datetime", "")
+        
+        # Récupérer l'intensité de carbone pour la zone
+        carbon_intensity = get_carbon_intensity(zone_code)
+        
+        
+        # Ouvrir (ou créer) un fichier CSV pour stocker les données
+        file_exists = os.path.exists(output_file)
+        
+        with open(output_file, mode="a", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=["zone", "datetime", "carbon_intensity", "temperature", "power_Consumption_Breakdown", "power_Production_Breakdown"])
+            
+            # Si le fichier n'existe pas encore, écrire les en-têtes
+            if not file_exists:
+                writer.writeheader()
+
+            # Écrire la ligne des données
+            writer.writerow({
+                "zone": zone,
+                "datetime": datetime,
+                "carbon_intensity": carbon_intensity,
+                "power_Consumption_Breakdown": power_consumption_breakdown,
+                "power_Production_Breakdown": power_production_breakdown
+            })
+
+        print(f"✅ Données sauvegardées dans {output_file}")
+    else:
+        print(f"❌ Erreur lors de la récupération des données de consommation : {response.status_code}")
+        return None
+
+def get_power_consumption(zone_code, output_file="power_consumption_data.csv"):
     url = f"https://api.electricitymap.org/v3/power-breakdown/latest?zone={zone_code}"
     headers = {"auth-token": API_KEY}
 
@@ -41,12 +87,32 @@ def get_power_consumption(zone_code):
 
     if response.status_code == 200:
         data = response.json()
-        return {
-            "zone": zone_code,
-            "power_Consumption_Breakdown": data["powerConsumptionBreakdown"],
-            "power_Production_Breakdown": data["powerProductionBreakdown"],
-            "datetime": data["datetime"]
-        }
+        
+        # Extraire les données nécessaires à partir du JSON
+        zone = zone_code
+        power_consumption_breakdown = data.get("powerConsumptionBreakdown", {})
+        power_production_breakdown = data.get("powerProductionBreakdown", {})
+        datetime = data.get("datetime", "")
+        
+        # Ouvrir (ou créer) un fichier CSV pour stocker les données
+        file_exists = os.path.exists(output_file)
+        
+        with open(output_file, mode="a", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=["zone", "datetime", "power_Consumption_Breakdown", "power_Production_Breakdown"])
+            
+            # Si le fichier n'existe pas encore, écrire les en-têtes
+            if not file_exists:
+                writer.writeheader()
+
+            # Écrire la ligne des données
+            writer.writerow({
+                "zone": zone,
+                "datetime": datetime,
+                "power_Consumption_Breakdown": power_consumption_breakdown,
+                "power_Production_Breakdown": power_production_breakdown
+            })
+
+        print(f"✅ Données sauvegardées dans {output_file}")
     else:
         print(f"❌ Erreur {response.status_code} - {response.text}")
         return None

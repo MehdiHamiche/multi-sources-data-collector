@@ -63,30 +63,6 @@ export default function CityInfoScreen() {
           <Text>🌡 Température : {data.temperature}°C</Text>
           <Text>💨 Intensité Carbone : {data.carbon_intensity} gCO₂/kWh</Text>
           <Text>⏳ Date : {data.date_time}</Text>
-
-          {/* Bouton pour afficher la carte uniquement si on a latitude & longitude */}
-          {data.latitude !== undefined && data.longitude !== undefined ? (
-            <Button
-              title="📍 Voir la carte"
-              onPress={() => router.push(`/map?latitude=${data.latitude}&longitude=${data.longitude}&city=${data.city}`)}
-            />
-          ) : (
-            <Text>📍 Aucune localisation disponible</Text>
-          )}
-
-          {/* Vérification avant d'afficher le graphique */}
-          {data.history && Array.isArray(data.history) && data.history.length > 0 ? (
-            <CarbonIntensityChart data={data.history} />
-          ) : (
-            <Text>📉 Aucune donnée historique disponible</Text>
-          )}
-
-          {/* Vérification avant d'afficher la liste des pays */}
-          {data.countries && data.countries.length > 0 ? (
-            <CountryList countries={data.countries} />
-          ) : (
-            <Text>🌍 Aucune information sur les pays voisins</Text>
-          )}
         </View>
       ) : (
         <Text>❌ Aucune donnée disponible</Text>

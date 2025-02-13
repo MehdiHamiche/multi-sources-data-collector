@@ -1,42 +1,21 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import MapView, { Marker } from "react-native-maps";
-import { useLocalSearchParams } from "expo-router";
 
 export default function MapScreen() {
-  const { latitude, longitude, city } = useLocalSearchParams();
-
-  // 🔥 Convertir `latitude` et `longitude` en `number`
-  const lat = Array.isArray(latitude) ? parseFloat(latitude[0]) : parseFloat(latitude);
-  const lon = Array.isArray(longitude) ? parseFloat(longitude[0]) : parseFloat(longitude);
-  const cityName = Array.isArray(city) ? city[0] : city;
-
-  // 🔥 Vérifier si lat/lon sont bien valides
-  if (isNaN(lat) || isNaN(lon)) {
-    return (
-      <View style={styles.container}>
-        <Text>❌ Aucune donnée GPS disponible</Text>
-      </View>
-    );
-  }
+  // 📍 Coordonnées GPS de Paris (OpenWeather)
+  const parisRegion = {
+    latitude: 48.8566,
+    longitude: 2.3522,
+    latitudeDelta: 0.1, // Zoom plus précis
+    longitudeDelta: 0.1,
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🗺 Carte de {cityName}</Text>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: lat,
-          longitude: lon,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
-        }}
-      >
-        <Marker
-          coordinate={{ latitude: lat, longitude: lon }}
-          title={cityName || "Ville inconnue"}
-          description="Localisation de la ville"
-        />
+      <Text style={styles.title}>🗺 Carte de Paris</Text>
+      <MapView style={styles.map} initialRegion={parisRegion}>
+        <Marker coordinate={parisRegion} title="Paris" description="Capitale de la France" />
       </MapView>
     </View>
   );

@@ -1,3 +1,4 @@
+import csv
 from fastapi import FastAPI, Query
 from ariadne.asgi import GraphQL
 from datetime import datetime
@@ -6,9 +7,10 @@ from app.weather_api import fetch_weather_infos
 from app.electricity_api import get_carbon_intensity, get_power_consumption  # Importer la nouvelle fonction
 from app.electricity_api import fetch_all_zones
 from app.electricity_api import fetch_consumption_zones
-from app.database import save_to_db
+from app.database import save_to_db, new_to_db
 from app.database import get_data_by_time_range
 from app.database import create_carbon_countries_table
+from app.database import export_to_csv
 from app.console_display import display_carbon_data  # Importer l'affichage coloré
 from app.console_display import display_all_countries
 from app.graphql_schema import schema
@@ -20,7 +22,21 @@ app = FastAPI()
 # Appeler la fonction au démarrage
 create_carbon_countries_table()
 
-# Fonction pour exécuter les appels API
+# 📌 Fonction pour lire `weather_infos.csv`
+def read_weather_data():
+    data = []
+    with open("weather_infos.csv", newline="", encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            data.append({
+                "city": row["city"],
+                "temperature": float(row["temperature"]),
+                "dateTime": row["dateTime"],
+                "description": row["description"],
+                "cloud": int(row["cloud"])
+            })
+    return data
+
 def scheduled_job():
     city = "Paris"
     weather = get_weather(city)
@@ -37,14 +53,13 @@ def scheduled_job():
             "date_time": weather["date_time"]
         }
         save_to_db(aggregated_data)
+        new_to_db(aggregated_data)
         print("Data saved automatically.")
 
-# Lancer le CRON job
 scheduler = BackgroundScheduler()
 scheduler.add_job(scheduled_job, 'interval', minutes=1)
 scheduler.start()
 
-# Endpoint REST pour récupérer les données et les sauvegarder
 @app.get("/get-data")
 def get_data(city: str):
     weather = get_weather(city)
@@ -64,7 +79,14 @@ def get_data(city: str):
     }
 
     save_to_db(aggregated_data)
+    new_to_db(aggregated_data)
     return {"message": "Data saved successfully", "data": aggregated_data}
+
+@app.get("/get-weather-data")
+def get_weather_data():
+    weather_data = read_weather_data()
+    print("📡 Données envoyées à l'application :", weather_data)
+    return JSONResponse(content={"history": weather_data})
 
 # Endpoint pour filtrer les données par plage horaire
 @app.get("/filter-data")
@@ -162,5 +184,6 @@ def startup_event():
     fetch_all_zones()
     fetch_consumption_zones()
     fetch_weather_infos()
+    export_to_csv()
 # Endpoint GraphQL
 app.mount("/graphql", GraphQL(schema))
